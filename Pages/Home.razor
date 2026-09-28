@@ -1,0 +1,450 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+<PageTitle>Ritim Kulak Testi</PageTitle>
+
+<div class="muzik-app-container">
+
+    <!-- Başlık Alanı -->
+    <div class="header-section">
+        <span class="logo-icon">🎵</span>
+        <h1>Ritim Kulak Testi</h1>
+        <p>Kulak eğitiminizi test edin, ritimleri yakalayın!</p>
+    </div>
+
+    <!-- Seviye Seçim Kartları -->
+    <div class="level-card-container">
+        <button class="level-btn @(_aktifSeviye == Seviye.Kolay ? "active-kolay" : "")"
+                @onclick="() => SeviyeDegistir(Seviye.Kolay)">
+            <span class="level-title">Kolay</span>
+            <span class="level-desc">3 Ritim</span>
+        </button>
+        <button class="level-btn @(_aktifSeviye == Seviye.Orta ? "active-orta" : "")"
+                @onclick="() => SeviyeDegistir(Seviye.Orta)">
+            <span class="level-title">Orta</span>
+            <span class="level-desc">5 Ritim</span>
+        </button>
+        <button class="level-btn @(_aktifSeviye == Seviye.Zor ? "active-zor" : "")"
+                @onclick="() => SeviyeDegistir(Seviye.Zor)">
+            <span class="level-title">Zor</span>
+            <span class="level-desc">7 Ritim</span>
+        </button>
+    </div>
+
+    <!-- Ana Oyun Kutusu -->
+    <div class="game-card">
+
+        <div class="question-badge">Soru @_soruNumarasi</div>
+
+        <!-- Dinleme Butonu -->
+        <div class="audio-trigger-area">
+            <button class="btn-listen" @onclick="SoruyuCal">
+                <span class="play-icon">▶</span> Ritmi Dinle
+            </button>
+        </div>
+
+        <div class="instruction-text">Duyduğunuz ritme en uygun seçeneği aşağıdan işaretleyin:</div>
+
+        <!-- Şıklar Listesi -->
+        <div class="options-list">
+            @foreach (var secenek in _secenekler)
+            {
+                bool isSelected = _secilenCevap != null && _secilenCevap.SequenceEqual(secenek);
+                bool isCorrect = _gercekCevap.SequenceEqual(secenek);
+
+                string cardClass = "option-card";
+                if (_cevabiGosterildi && isCorrect) cardClass += " correct-highlight";
+                else if (isSelected)
+                {
+                    if (isCorrect) cardClass += " correct-highlight";
+                    else cardClass += " wrong-highlight";
+                }
+
+                <button class="@cardClass" @onclick="() => SecenekTiklandi(secenek)" disabled="@(_dogruMu || _cevabiGosterildi)">
+                    <span class="option-bullet">♫</span>
+                    <span class="option-text">@string.Join(" - ", secenek)</span>
+                </button>
+            }
+        </div>
+
+        <!-- Alt Kontrol Butonları -->
+        <div class="action-footer">
+            <button class="btn-action btn-show-answer" @onclick="CevabiGoster" disabled="@(_dogruMu || _cevabiGosterildi)">
+                Cevabı Göster
+            </button>
+
+            @if (_dogruMu || _cevabiGosterildi)
+            {
+                <button class="btn-action btn-next" @onclick="SonrakiSoru">
+                    Sonraki Soru ➔
+                </button>
+            }
+        </div>
+
+        <!-- Sonuç Bildirimi -->
+        @if (!string.IsNullOrEmpty(_sonucMesaji))
+        {
+            <div class="result-alert @(_dogruMu ? "alert-success" : "alert-error")">
+                @_sonucMesaji
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<!-- Sayfa İçi Tasarım (CSS) Kodları -->
+<style>
+    body {
+        background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .muzik-app-container {
+        max-width: 650px;
+        margin: 30px auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+
+    .header-section {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .logo-icon {
+        font-size: 40px;
+    }
+
+    .header-section h1 {
+        margin: 10px 0 5px 0;
+        color: #2c3e50;
+        font-size: 28px;
+    }
+
+    .header-section p {
+        color: #7f8c8d;
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .level-card-container {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 25px;
+    }
+
+    .level-btn {
+        flex: 1;
+        background: #f1f2f6;
+        border: 2px solid #dfe4ea;
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+        .level-btn:hover {
+            background: #e4e7eb;
+        }
+
+    .level-title {
+        font-weight: bold;
+        font-size: 16px;
+        color: #2f3640;
+    }
+
+    .level-desc {
+        font-size: 12px;
+        color: #718093;
+        margin-top: 3px;
+    }
+
+    .active-kolay {
+        background: #e1f5fe !important;
+        border-color: #00bcd4 !important;
+    }
+
+        .active-kolay .level-title {
+            color: #00838f;
+        }
+
+    .active-orta {
+        background: #fff3e0 !important;
+        border-color: #ff9800 !important;
+    }
+
+        .active-orta .level-title {
+            color: #ef6c00;
+        }
+
+    .active-zor {
+        background: #ffebee !important;
+        border-color: #f44336 !important;
+    }
+
+        .active-zor .level-title {
+            color: #c62828;
+        }
+
+    .game-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid #f1f2f6;
+        position: relative;
+    }
+
+    .question-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #f1f2f6;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #57606f;
+    }
+
+    .audio-trigger-area {
+        text-align: center;
+        margin: 20px 0 15px 0;
+    }
+
+    .btn-listen {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .btn-listen:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 117, 252, 0.6);
+        }
+
+    .instruction-text {
+        text-align: center;
+        color: #747d8c;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .option-card {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        padding: 14px 18px;
+        border-radius: 12px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 16px;
+        text-transform: capitalize;
+        transition: all 0.2s;
+    }
+
+        .option-card:hover:not(:disabled) {
+            background: #f1f3f5;
+            border-color: #ced4da;
+            transform: translateX(3px);
+        }
+
+    .option-bullet {
+        color: #adb5bd;
+    }
+
+    .correct-highlight {
+        background: #d4edda !important;
+        border-color: #28a745 !important;
+        color: #155724;
+        font-weight: bold;
+    }
+
+    .wrong-highlight {
+        background: #f8d7da !important;
+        border-color: #dc3545 !important;
+        color: #721c24;
+    }
+
+    .action-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
+    }
+
+    .btn-show-answer {
+        background: #ff9f43;
+        color: white;
+    }
+
+        .btn-show-answer:hover:not(:disabled) {
+            background: #e67e22;
+        }
+
+    .btn-next {
+        background: #2ed573;
+        color: white;
+        margin-left: auto;
+    }
+
+        .btn-next:hover {
+            background: #26af5f;
+        }
+
+    .result-alert {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    private enum Seviye { Kolay, Orta, Zor }
+    private Seviye _aktifSeviye = Seviye.Kolay;
+
+    private int _soruNumarasi = 1;
+    private List<string> _gercekCevap = new();
+    private List<string> _secilenCevap;
+    private List<List<string>> _secenekler = new();
+    private List<string> _tumRitimler = new() { "van", "izmir", "ankara", "karaman", "gelibolu", "terazi" };
+
+    private string _sonucMesaji = "";
+    private bool _dogruMu = false;
+    private bool _cevabiGosterildi = false;
+    private Random _rnd = new Random();
+
+    protected override void OnInitialized()
+    {
+        YeniSoruUret(true);
+    }
+
+    private void SeviyeDegistir(Seviye yeniSeviye)
+    {
+        _aktifSeviye = yeniSeviye;
+        YeniSoruUret(true);
+    }
+
+    private void SonrakiSoru()
+    {
+        YeniSoruUret(false);
+    }
+
+    private void YeniSoruUret(bool sifirla)
+    {
+        if (sifirla) _soruNumarasi = 1;
+        else _soruNumarasi++;
+
+        _secilenCevap = null;
+        _sonucMesaji = "";
+        _dogruMu = false;
+        _cevabiGosterildi = false;
+        _gercekCevap.Clear();
+        _secenekler.Clear();
+
+        int ritimSayisi = _aktifSeviye switch
+        {
+            Seviye.Kolay => 3,
+            Seviye.Orta => 5,
+            Seviye.Zor => 7,
+            _ => 3
+        };
+
+        for (int i = 0; i < ritimSayisi; i++)
+        {
+            _gercekCevap.Add(_tumRitimler[_rnd.Next(_tumRitimler.Count)]);
+        }
+        _secenekler.Add(new List<string>(_gercekCevap));
+
+        while (_secenekler.Count < 4)
+        {
+            var celdirici = new List<string>();
+            for (int i = 0; i < ritimSayisi; i++)
+            {
+                celdirici.Add(_tumRitimler[_rnd.Next(_tumRitimler.Count)]);
+            }
+
+            bool secenekZatenVarMi = _secenekler.Any(s => s.SequenceEqual(celdirici));
+            if (!secenekZatenVarMi)
+            {
+                _secenekler.Add(celdirici);
+            }
+        }
+
+        _secenekler = _secenekler.OrderBy(x => _rnd.Next()).ToList();
+    }
+
+    private async Task SoruyuCal()
+    {
+        await JS.InvokeVoidAsync("sesMotoru.diziyiCal", _gercekCevap);
+    }
+
+    private void SecenekTiklandi(List<string> tiklananSecenek)
+    {
+        _secilenCevap = tiklananSecenek;
+
+        if (_secilenCevap.SequenceEqual(_gercekCevap))
+        {
+            _dogruMu = true;
+            _sonucMesaji = "Tebrikler! Doğru şıkkı buldun.";
+        }
+        else
+        {
+            _dogruMu = false;
+            _sonucMesaji = "Yanlış oldu. Duyduğun ritmi tekrar dinle ve başka bir şıkkı dene.";
+        }
+    }
+
+    private void CevabiGoster()
+    {
+        _cevabiGosterildi = true;
+        _sonucMesaji = "Doğru ritim yeşil ile işaretlendi.";
+    }
+}

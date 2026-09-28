@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ritim Kulak Testi</title>
+    <base href="/" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="css/app.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <div class="ilk-yukleme" style="text-align: center; margin-top: 20%; font-family: sans-serif;">Ritim Kulak Testi yükleniyor…</div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Beklenmeyen bir hata oluştu.
+        <a href="" class="reload">Yenile</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <!-- Blazor'u başlatan asıl dosya -->
+    <script src="_framework/blazor.webassembly.js"></script>
+
+    <!-- Bizim gecikmesiz ses çalma motorumuz -->
+    <script>
+        window.sesMotoru = {
+            diziyiCal: async function (ritimDizisi) {
+                for (let i = 0; i < ritimDizisi.length; i++) {
+                    let sehir = ritimDizisi[i].toLowerCase();
+                    sehir = sehir.replace("i̇", "i").replace("ş", "s");
+
+                    let ses = new Audio(`sesler/${sehir}.mp3`);
+                    await new Promise(resolve => {
+                        ses.onended = resolve;
+                        ses.play();
+                    });
+                }
+            }
+        };
+    </script>
+</body>
+</html>
