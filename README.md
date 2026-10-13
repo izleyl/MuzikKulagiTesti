@@ -10,7 +10,6 @@ Blazor WebAssembly tabanlı modern bir **müzik kulağı eğitim uygulaması**. 
 - Seviyeye dayalı ilerleme sistemi (Kolay → Orta → Zor)
 - Seviye kilit/açma mekanizması
 - Kullanıcı yüksek skor takibi
-- Çoklu enstrüman desteği
 
 ---
 
